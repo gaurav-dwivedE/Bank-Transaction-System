@@ -1,5 +1,6 @@
 const userModel = require("../models/user.model")
 const jwt = require("jsonwebtoken")
+const sendRegistrationEmail = require("../services/email.service")
 
 /**  
  * - user register controller
@@ -8,7 +9,7 @@ const jwt = require("jsonwebtoken")
 async function userRegisterController (req, res) {
     try {
         const {name, email, password} = req.body || {}
-        const isExist = await userModel.findOne({email})
+        const isExist = await userModel.findOne({email});
 
         if(isExist){
            return res.status(409).json({
@@ -17,10 +18,11 @@ async function userRegisterController (req, res) {
             })
         }
 
-        const  user = await userModel.create({name, email, password})
-        const token = jwt.sign({userId: user._id}, process.env.JWT_SECRET, {expiresIn: '3d'})
+        const  user = await userModel.create({name, email, password});
+        const token = jwt.sign({userId: user._id}, process.env.JWT_SECRET, {expiresIn: '3d'});
 
-        res.cookie("token", token)
+        res.cookie("token", token);
+
 
         res.status(201).json({
             "status": "success",
@@ -32,7 +34,10 @@ async function userRegisterController (req, res) {
                 email: user.name
             }
     
-        })
+        });
+    
+        await sendRegistrationEmail(user.email, user.name);
+
     } catch (error) {
         res.status(500).json({
              "status": "failed",
